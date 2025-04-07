@@ -264,3 +264,49 @@ def todos_los_sellos_escaneados(self, load):
                 QMessageBox.information(self, "Completado", f"Se han escaneado los {actuales} pallets esperados.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al escanear: {str(e)}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def scan_seal_ui(self):
+        scanned_seal = self.pallet_input.text().strip()
+
+        load = self.parent.main_screen.Load_input.text().strip()
+        if not load:
+            QMessageBox.warning(self, "Error", "No se ha ingresado un Load.")
+            return
+
+        try:
+            scan_pallet(load, pallet_id)
+            self.load_pallets_ui()
+            QMessageBox.information(self, "Éxito", f"Pallet '{pallet_id}' registrado.")
+
+            total_esperado = get_expected_pallet_count(load)
+            actuales = len(get_all_packages(load))
+            if actuales >= total_esperado:
+                QMessageBox.information(self, "Completado", f"Se han escaneado los {actuales} pallets esperados.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al escanear: {str(e)}")
