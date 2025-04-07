@@ -310,3 +310,56 @@ def todos_los_sellos_escaneados(self, load):
                 QMessageBox.information(self, "Completado", f"Se han escaneado los {actuales} pallets esperados.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al escanear: {str(e)}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def scan_seal(load, scanned_seal):
+    conn = sqlite3.connect('routing(loads-in-charge).db')
+    try:
+        cursor = conn.cursor()
+
+        # Obtener la lista de sellos para el Load
+        cursor.execute("SELECT Seal_LIST FROM loads WHERE Load = ?", (load,))
+        result = cursor.fetchone()
+
+        if not result or not result[0]:
+            raise ValueError(f"No hay sellos definidos para el Load '{load}'")
+
+        seal_list = result[0].split(",")
+
+        if scanned_seal not in seal_list:
+            raise ValueError(f"El sello '{scanned_seal}' no pertenece al Load '{load}'")
+
+        # Verificar si ese sello ya fue escaneado
+        cursor.execute("SELECT COUNT(*) FROM pallets WHERE Load = ? AND seal_id = ?", (load, scanned_seal))
+        if cursor.fetchone()[0] > 0:
+            raise ValueError(f"El sello '{scanned_seal}' ya ha sido registrado para el Load '{load}'")
+
+        # Determinar el PalletID basado en la posición en la lista
+        pallet_id = seal_list.index(scanned_seal) + 1
+        fecha_escaneo = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Insertar el pallet
+        cursor.execute('''INSERT INTO pallets (PalletID, Load, FechaEscaneo, seal_id)
+                          VALUES (?, ?, ?, ?)''',
+                       (str(pallet_id), load, fecha_escaneo, scanned_seal))
+        conn.commit()
+
+        return pallet_id
+    except Exception as e:
+        raise e
+    finally:
+        conn.close()
