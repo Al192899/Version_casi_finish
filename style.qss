@@ -1,0 +1,80 @@
+/* General application style */
+QWidget {
+    background-color: #0057B8;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+QLabel {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFFFFF;
+    border: none;
+    background-color: transparent;
+}
+
+QPushButton {
+    background-color: #FF6666;
+    color: #FFFFFF;
+    font-weight: bold;
+    padding: 10px;
+    border: 2px solid #FF4D4D;
+    border-radius: 5px;
+}
+
+QPushButton:hover {
+    background-color: #FF4D4D;
+    border: 2px solid #CC0000;
+}
+
+QPushButton:pressed {
+    background-color: #CC0000;
+    border: 2px solid #990000;
+}
+
+QLineEdit {
+    border: 1px solid #CCCCCC;
+    border-radius: 5px;
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QLineEdit:focus {
+    border: 2px solid #FF6666;
+}
+
+QComboBox {
+    border: 1px solid #CCCCCC;
+    border-radius: 5px;
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QComboBox QAbstractItemView {
+    border: 1px solid #FF6666;
+    selection-background-color: #FFCCCC;
+    selection-color: #000000;
+}
+
+QTextEdit {
+    border: 1px solid #CCCCCC;
+    border-radius: 5px;
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QScrollBar:vertical {
+    border: 1px solid #555555;
+    background-color: #000000;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #FF6666;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #FF4D4D;
+}
