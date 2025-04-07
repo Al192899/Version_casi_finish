@@ -79,9 +79,139 @@ def scan_seal(load, scanned_seal):
                        VALUES(?, ?, ?, ?)''',
                        (str(pallet_id), load, fecha_escaneo, scanned_seal))
         conn.Commit()
-        
-        print(f"Sello'{scanned_seal}' escaneado correctamente como PalletID '{pallet_id}'")
+    print(f"Sello'{scanned_seal}' escaneado correctamente como PalletID '{pallet_id}'")
     except Exception as e:
         print(f"Error al escanear sello: {e}")
+    finally:
+        conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def scan_seal(load, scanned_seal):
+    conn = sqlite3.connect('routing(loads-in-charge).db')
+    try: 
+        cursor = conn.cursor()
+        
+        # Obtener lista de sellos
+        cursor.execute("SELECT Seal_LIST FROM loads WHERE Load = ?", (load,))
+        result = cursor.fetchone()  # Corrección aquí
+
+        if not result or not result[0]:
+            raise ValueError(f"No hay sellos definidos para el load '{load}'")
+        
+        seal_list = result[0].split(",")
+        seal_list = [s.strip() for s in seal_list]  # Limpia espacios extra por si acaso
+
+        if scanned_seal not in seal_list:
+            raise ValueError(f"El sello '{scanned_seal}' no pertenece al Load '{load}'")
+        
+        pallet_id = seal_list.index(scanned_seal) + 1  # PalletID comienza desde 1
+        fecha_escaneo = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Verificar si ya se ha escaneado ese sello
+        cursor.execute("SELECT COUNT(*) FROM pallets WHERE seal_ID = ? AND Load = ?", (scanned_seal, load))
+        if cursor.fetchone()[0] > 0:
+            raise ValueError(f"El sello '{scanned_seal}' ya ha sido escaneado para este Load.")
+
+        # Insertar Pallet
+        cursor.execute('''INSERT INTO pallets (PalletID, Load, FechaEscaneo, seal_ID)
+                          VALUES (?, ?, ?, ?)''',
+                       (str(pallet_id), load, fecha_escaneo, scanned_seal))  # Corrección aquí
+        conn.commit()  # Corrección aquí
+
+        print(f"Sello '{scanned_seal}' escaneado correctamente como PalletID '{pallet_id}'")
+
+    except Exception as e:
+        print(f"Error al escanear sello: {e}")
+        raise  # Opcional: relanzar la excepción para manejarla en la interfaz
+    finally:
+        conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def scan_seal_ui(self):
+    load = self.parent.main_screen.Load_input.text().strip()
+    scanned_seal = self.seal_input.text().strip()
+
+    if not load or not scanned_seal:
+        QMessageBox.warning(self, "Error", "Debe ingresar el Load y el Sello.")
+        return
+
+    try:
+        scan_seal(load, scanned_seal)
+        self.seal_input.clear()
+        self.load_pallets_ui()  # Refresca la lista
+
+        # Verificar si se escanearon todos los pallets
+        if self.todos_los_sellos_escaneados(load):
+            QMessageBox.information(self, "¡Completado!", f"Todos los pallets del Load '{load}' han sido escaneados.")
+        else:
+            QMessageBox.information(self, "Éxito", f"Sello '{scanned_seal}' escaneado correctamente.")
+    except Exception as e:
+        QMessageBox.critical(self, "Error", f"Error al escanear el sello: {str(e)}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def todos_los_sellos_escaneados(self, load):
+    conn = sqlite3.connect('routing(loads-in-charge).db')
+    cursor = conn.cursor()
+    try:
+        # Obtener la cantidad de pallets esperados
+        cursor.execute("SELECT Cantidad_Pallets FROM loads WHERE Load = ?", (load,))
+        cantidad_esperada = cursor.fetchone()
+        if not cantidad_esperada:
+            return False
+        cantidad_esperada = cantidad_esperada[0]
+
+        # Contar cuántos pallets se han escaneado
+        cursor.execute("SELECT COUNT(*) FROM pallets WHERE Load = ?", (load,))
+        cantidad_escaneada = cursor.fetchone()[0]
+
+        return cantidad_escaneada >= cantidad_esperada
     finally:
         conn.close()
