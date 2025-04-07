@@ -1,1 +1,44 @@
 voy a implementar una funcion scan_seal esta funcion debe sustituir a la funcion de escanear palllet_ID en vez de escanear el pallet_ID se debe escanear Scan_Seal, cual es la logica?: es asi: en Database #tabla loads se debe agregar una tabla con Seal_list, y en la tabla pallets se debe agrgar una columna llamada seal_ID, estas columnas se encargaran de recuperar la siguiente informacion "Seal_list" debe introducirse desde la MainScreen lo que recibe la funcion a traves del campo de Seal es: El numero inicial de una lista de sellos y el numero final de la misma lista: ejemplo Seal: 490663 490676, lo que la funcion debe hacer es crear la lista secuencial que comprenden estos dos numeros de esta forma: 490663,490664,490665 ...hasta 490676, son 13 en este caso que es el numero de pallets que recibimos como detalle de ese load estos deben guardarse en una lista o algun arreglo lo siguiente es que en la PalletScreen se debe escanear un codigo que coincide con alguno de los Saal_list, cuando escaneamos este codigo la funcion debe comparar la posicion de la lista en la que se encuentre el mismo codigo un ejemplo tenemos la lista :490663,490664,490665 ...hasta 490676 y nosotros recibimos el numero 490673 en nuestra lista este numero coincide en la posicion [11-1] ahora ese numero de indice es el valor que retorna y se guarda en pallet_ID y ahora ambas entradas se guardan en la db como en esta tabla de excel :Load Trailer Rampa Destino Fecha Cantidad de Pallets Seal PalletID 78654 6217526543762 05 Steris I 2025-04-07 13 490676 10
+
+
+def scan_seal(load, seal_code):
+    conn = sqlite3.connect('routing(loads-in-charge-region).db')
+    try:
+        cursor = conn.cursor()
+
+        # Obtener la Seal_list desde la tabla loads
+        cursor.execute("SELECT Seal_list FROM loads WHERE Load = ?", (load,))
+        row = cursor.fetchone()
+
+        if not row:
+            raise ValueError("El Load no existe.")
+
+        seal_list_str = row[0]
+        seal_list = seal_list_str.split(',')  # Convertimos de string a lista
+        seal_list = [s.strip() for s in seal_list]
+
+        # Buscar el índice del seal_code
+        if seal_code not in seal_list:
+            raise ValueError(f"El sello {seal_code} no pertenece al Load {load}.")
+
+        index = seal_list.index(seal_code)
+        pallet_id = index + 1  # Aquí defines correctamente la variable
+
+        # Verificar si ya existe ese pallet con ese sello
+        cursor.execute('SELECT COUNT(*) FROM pallets WHERE seal_ID = ? AND Load = ?', (seal_code, load))
+        exists = cursor.fetchone()[0]
+        if exists > 0:
+            raise ValueError(f"El sello '{seal_code}' ya fue escaneado para el Load '{load}'.")
+
+        # Insertar el pallet con el pallet_id calculado
+        cursor.execute('''INSERT INTO pallets (PalletID, Load, FechaEscaneo, seal_ID)
+                          VALUES (?, ?, ?, ?)''',
+                       (str(pallet_id), load, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), seal_code))
+        conn.commit()
+        print(f"✅ Sello '{seal_code}' registrado exitosamente con PalletID {pallet_id} en el Load '{load}'.")
+
+    except Exception as e:
+        print(f"Error al escanear: {e}")
+        raise
+    finally:
+        conn.close()
