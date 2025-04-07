@@ -42,3 +42,46 @@ def scan_seal(load, seal_code):
         raise
     finally:
         conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def scan_seal(load, scanned_seal):
+    conn = sqlite3.connect('routing(loads-in-charge).db')
+    try: 
+        cursor = conn.cursor()
+        
+        #obtener lista de sellos
+        cursor.execute("SELECT Seal_LIST FROM loads WHERE Load = ?", (load,))
+        result = cursor.fethcone()
+        
+        if not result or not result[0]:
+            raise ValueError(f"No hay sellos definidos para el load'{load}'")
+        seal_list = result[0].split(",")
+        if scanned_seal not in seal_list:
+            raise ValueError(f"El sello '{scanned_seal}' no pertenece al Load '{load}'")
+        
+        pallet_id =  seal_list.index(scanned_seal) + 1 #para empezar desde 1 
+        fecha_escaneo = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        #Insertar Pallet
+        cursor.execute('''SELECT INTO pallet (PalletID, Load, FechaEscaneo, seal_id)
+                       VALUES(?, ?, ?, ?)''',
+                       (str(pallet_id), load, fecha_escaneo, scanned_seal))
+        conn.Commit()
+        
+        print(f"Sello'{scanned_seal}' escaneado correctamente como PalletID '{pallet_id}'")
+    except Exception as e:
+        print(f"Error al escanear sello: {e}")
+    finally:
+        conn.close()
